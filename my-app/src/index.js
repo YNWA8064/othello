@@ -5,6 +5,7 @@ import './index.css';
 function Square(props) {
 	return (
 		<button
+			winBy={props.winBy}
 			className="square"
 			onClick={props.onClick}
 		>
@@ -15,8 +16,15 @@ function Square(props) {
 
 class Board extends React.Component {	
   	renderSquare(i) {
+		let winBy;
+		if (this.props.howToWin) {
+			if (i in this.props.howToWin) {
+				winBy = true;
+			} else { winBy = false }
+		}
 		return (
 			<Square
+				winBy={winBy}
 				value={this.props.squares[i]} 
 				onClick={() => this.props.onClick(i)}
 			/>
@@ -75,9 +83,6 @@ class Game extends React.Component {
 					col: i%3 + 1
 				}
 			}]),
-			// movement: movement.concat([{
-			// 	move: rowColumnCal(i) + ' By ' + (this.state.xIsNext ? 'X' : 'O')
-			// }]),
 			stepNumber: history.length,
 			xIsNext: !this.state.xIsNext,
 		})
@@ -93,7 +98,8 @@ class Game extends React.Component {
   	render() {
 		const history = this.state.history.slice(0, this.state.stepNumber + 1);
 		const current = history[this.state.stepNumber];
-		const winner = calculateWinner(current.squares);	
+		const squares = current.squares.slice();
+		const winner = calculateWinner(squares);
 		
 		const moves = history.map((step, move) => {
 			const desc = move ?
@@ -108,15 +114,19 @@ class Game extends React.Component {
 		});
 		
 		let status;
+		let howToWin;
 		if (winner) {
-			status = 'Winner : ' + winner;
+			status = 'Winner : ' + winner[0];
+			howToWin = winner.slice(1,winner.length + 1);
 		} else {
 			status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+			howToWin = null;
 		}
 		return (
 			<div className="game">
 				<div className="game-board">
-					<Board 
+					<Board
+						howToWin={howToWin}
 						squares={current.squares}
 						onClick={(i) => this.handleClick(i)}
 					/>
@@ -144,7 +154,7 @@ function calculateWinner(squares) {
 	for (let i = 0; i <lines.length; i++) {
 		const [a, b, c] = lines[i];
 		if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-			return squares[a]
+			return [squares[a], [a, b, c]]
 		}
 	}
 	return null;

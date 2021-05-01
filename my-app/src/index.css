@@ -7,6 +7,10 @@ ol, ul {
   padding-left: 30px;
 }
 
+.square[winBy=true] {
+	border: 2px solid #999;
+}
+
 .board-row:after {
   clear: both;
   content: "";
