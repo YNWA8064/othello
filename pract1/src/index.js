@@ -19,9 +19,9 @@ class Board extends React.Component {
   renderSquare(i) {
     return (
 		<Square
-			key={i}
+			 key={i}
              value={this.props.squares[i]}
-			 winningobj={this.props.winningobj && (i in this.props.winningobj)}
+			 winningobj={this.props.winningobj && (this.props.winningobj.includes(i))}
              onClick={() => this.props.onClick(i)}
         />);
   }
@@ -106,6 +106,7 @@ class Game extends React.Component {
 		const current = history[this.state.stepNumber];
 		const winner = calculateWinner(current.squares)[0];
 		const isAscending = this.state.isAscending;
+		const isFull = !current.squares.includes(null);
 		
 		const moves = history.map((step, move) => {
 			const desc = move ?
@@ -130,11 +131,13 @@ class Game extends React.Component {
 		)
 		
 	    let status;
-	    if (winner) {
+		if (isFull) {
+			status = 'Draw!';
+		} else if (winner) {
 			status = 'Winner : ' + winner;
-	    } else {
-		    status = 'Next Player : ' + (this.state.xIsNext ? 'X' : 'O');
-	    }
+		} else {
+			status = 'Next Player : ' + (this.state.xIsNext ? 'X' : 'O');
+		}
         return (
 		    <div className="game">
 				<div className="game-board">
