@@ -15,23 +15,31 @@ function createMap(size) {
 }
 
 function Square(props) {
-  return (
-    <button
-        className={props.winningobj ? "highlight" : "square"}
-        onClick={props.onClick}
-    >
-      {props.value}
-    </button>
-  );
+  	return (
+    	<button
+        	className={props.canI ? 'youcan' : 'square'}
+        	onClick={props.onClick}
+    	>
+      		{props.value}
+    	</button>
+	);
 }
 
 function Board(props) {
   	function renderSquare(i, j) {
+		let canI;
+		for (let m=0; m<props.canDo.length; m++) {
+			if (JSON.stringify([i, j])===JSON.stringify(props.canDo[m])) {
+				canI = true;
+				break;
+			} else {canI = false};
+		};
     	return (
 			<Square
-				 key={[i, j]}
-				 value={props.squares[i][j]}
-				 onClick={() => props.onClick(i, j)}
+				key={[i, j]}
+				value={props.squares[i][j]}
+				canI={canI}
+				onClick={() => props.onClick(i, j)}
         	/>
 		);
   	}
@@ -55,20 +63,18 @@ function Othello(props) {
 	const [isAscending, setIsAscending] = useState(true);
 	const [history, setHistory] = useState([{
 				squares: createMap(Size),
-				row: [0],
-				col: [0],
+				row: 0,
+				col: 0,
 			}]
 	);
 	const [xIsNext, setXIsNext] = useState(true);
 	const [stepNumber, setStepNumber] = useState(0);
 	
 	
-
-	
 	function handleClick(i, j) {
-		const historySlice = history.slice(0, stepNumber + 1);
+		const historySlice = JSON.parse(JSON.stringify(history)).slice(0, stepNumber+1);
 		const current = historySlice[historySlice.length - 1];
-		const squares = current.squares.slice();
+		const squares = JSON.parse(JSON.stringify(current.squares));
 		if (squares[i][j]) {
 			return;
 		}
@@ -91,7 +97,7 @@ function Othello(props) {
 		setIsAscending(!isAscending);
 	}
 	
-	// const isFull = !current.squares.includes(null);
+	let isFull;
 
 	function jumpTo(step) {
 		setStepNumber(step);
@@ -100,7 +106,7 @@ function Othello(props) {
 	
 	const moves = history.map((step, move) => {
 		const desc = move ?
-			`Go to move #${move} | ${step.row+1} ${step.col+1} ${(move%2)===0 ? 'by O' : 'by X'}` :
+			`Go to move #${move} | ${step.row} ${step.col} ${(move%2)===0 ? 'by O' : 'by X'}` :
 			'Go to game start';
 		return (
 			<li key={move}>
@@ -118,13 +124,63 @@ function Othello(props) {
 	const reversebutton = (
 		<button onClick={()=>handleReverse()}>{reversebuttontext}</button>
 	)
+	
+	const historySlice = JSON.parse(JSON.stringify(history)).slice(0, stepNumber+1);
+	const current = historySlice[stepNumber];
+	const score = [0, 0];
+	for (let i=0;i<Size;i++) {
+		for (let j=0;j<Size;j++) {
+			if (current.squares[i][j]==='X') {
+				score[0]++;
+			} else if (current.squares[i][j]==='O') {
+				score[1]++;
+			}
+		}
+	}
+	
 
-	let status = 'Next Player : ' + (xIsNext ? 'X' : 'O');
+	
+	function makeCanDo(currentSquares, xIsNext) {
+		const canDo = [];
+		for (let i=0;i<Size;i++) {
+			for (let j=0;j<Size;j++) {
+				let a = othelloCal(i, j, currentSquares, xIsNext);
+				if ((currentSquares[i][j]===null)&&(a.length>0)) {
+					canDo.push([i, j]);	
+				}
+			}
+		}
+		return canDo;
+	}
+	const canDo = makeCanDo(current.squares, xIsNext);
+	if (canDo.length===0) {
+		if(makeCanDo(current.squares, !xIsNext).length===0) {
+			isFull=true;
+		} else {
+			alert(`${xIsNext ? 'X' : 'O'} should pass!`)
+			setHistory(historySlice.concat([{
+				squares: current.squares,
+				row: 'pass',
+				col: 'pass',
+			}]));
+			setStepNumber(historySlice.length);
+			setXIsNext(!xIsNext);
+		}
+	};
+	let status;
+	if (isFull) {
+		if (score[0]>score[1]) {status = 'Winner : X'}
+		else if (score[0]===score[1]) {status = 'Draw!'}
+		else {status = 'Winner : O'}
+	} else {status = 'Next Player : ' + (xIsNext ? 'X' : 'O');}
+	const scoreText = `X: ${score[0]} O: ${score[1]}`;
+	
 	return (
 		<div className="game">
 			<div className="game-board">
 				<Board
-					squares={history[0].squares}
+					squares={current.squares}
+					canDo={canDo}
 					onClick={(i, j) => handleClick(i, j)}
 				/>
 			</div>
@@ -132,6 +188,7 @@ function Othello(props) {
 				<div>{status}</div>
 				<ol>{moves}</ol>
 				<div>{reversebutton}</div>
+				<div>{scoreText}</div>
 			</div>
 		</div>
 	);
